@@ -1,0 +1,82 @@
+#name_container {
+    margin: 1;
+    border: double $primary;
+    border-title-background: $surface;
+    border-title-color: $foreground;
+    content_align: left middle;
+    height: auto;
+}
+
+#dir_container {
+    margin: 1;
+    border: double $primary;
+    border-title-background: $surface;
+    border-title-color: $foreground;
+    align: center middle;
+    content_align: center middle;
+    height: auto;
+}
+
+.setting_container {
+    margin: 1;
+    border: ascii $primary;
+    align: center middle;
+    content_align: center middle;
+    height: auto;
+}
+
+#dirSetting_input {
+    border: solid $primary;
+}
+
+#option_container {
+    margin: 1;
+    border: double $primary;
+    border-title-background: $surface;
+    border-title-color: $foreground;
+    align: center top;
+}
+#projname_input {
+    margin: 0 0 0 15;
+    border: none;
+    width: 80%;
+    height: auto;
+}
+
+#dir_list {
+    border: none;
+    align: center middle;
+    width: 80%;
+}
+
+#buttons1 {
+    align: center top;
+    margin: 1;
+}
+.main_buttons {
+    margin:1
+}
+
+.saveSetting_button {
+    align: left top;
+    margin: 1;
+}
+
+#title_container {
+    margin: 1;
+    height: auto;
+    content_align: right middle;
+    align: center middle;
+}
+
+#title_label {
+    margin: 0;
+    width: 80%;
+    border: none;
+    height: auto;
+}
+
+VerticalGroup {
+    align: center middle;
+    padding: 1;
+}
