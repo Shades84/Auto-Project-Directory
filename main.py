@@ -27,7 +27,7 @@ from textual.widgets import (
 )
 from textual.widgets.option_list import Option
 
-VER = "2.0.0"
+VER = "2.1.0"
 TITLE= r"""
     ___         __           ____               _           __     ____  _                __                  
    /   | __  __/ /_____     / __ \_________    (_)__  _____/ /_   / __ \(_)_______  _____/ /_____  _______  __
