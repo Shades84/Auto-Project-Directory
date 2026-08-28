@@ -479,7 +479,7 @@ class AutoProjDirUI(App):
             l = open(link_path,"a") 
             l.write('[Desktop Entry]\n')
             l.write('Type=Application\n')
-            l.write(f'Exec=xdg-open obsidian://open?file={proj_note}')
+            l.write(f'Exec=xdg-open \"obsidian://open?file={proj_note}\"')
             l.close()
         if (OS == 'Windows'):
             # on the windows side, need two additional libraries
