@@ -1,14 +1,18 @@
 import json
 import subprocess
 import os
+from difflib import get_close_matches
+import platform
 
-from typing import Callable, ClassVar, Generic, Iterable, TypeVar, cast
-
+try:
+    import winshell # library to create windows shortcuts
+except:
+    pass
 from textual.types import OptionDoesNotExist
 from textual._on import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Grid, HorizontalGroup, VerticalGroup
+from textual.containers import Container, HorizontalGroup, VerticalGroup
 from textual.widgets import (
     Button,
     Checkbox,
@@ -32,6 +36,8 @@ TITLE= r"""
 /_/  |_\__,_/\__/\____/  /_/   /_/   \____/_/ /\___/\___/\__/  /_____/_/_/   \___/\___/\__/\____/_/   \__, /  
                                          /___/                                                       /____/   
 """
+
+OS = platform.system()
 
 class _SelectionList(SelectionList):
     # adding custom bindings to SelectionList
@@ -87,10 +93,11 @@ class AutoProjDirUI(App):
         for i in range(0,len(d["dirs"])):
             lbl =temp_dirs[i][0] 
             val =temp_dirs[i][0] 
-            # if running linux, we will have to deal with the whitespace
-            # we may want to do a bit more processing on the name 
-            # (removing trailing whitespaces, allowing preferences for space replacement, etc.) 
-            # For the time being, if people want their directories to be nice, they have to format it themselves.
+            # need to deal with the whitespace we may want to do a bit
+            # more processing on the name (removing trailing whitespaces,
+            # allowing preferences for space replacement, etc.) 
+            # For the time being, if people want their directories to be
+            # nice, they have to format it themselves.
 
             if temp_dirs[i][1] == '1':
                 enbl = True
@@ -106,7 +113,7 @@ class AutoProjDirUI(App):
         self.mkNote_def = d["mkNote_def"]
         self.venv_def = d["venv_def"]
         self.cargo_def = d["cargo_def"]
-        #self.linkDef = d["link_def"]
+        self.link_def = d["link_def"]
 
     def write_option(self):
         option_list=self.query_one("#dirSetting_list")
@@ -118,13 +125,22 @@ class AutoProjDirUI(App):
         num_dirs = len(self.dirSetting_list)
 
         base_path = self.query_one("#projSetting_input").value
-        base_path = base_path.replace("\\", "\\\\")
         note_path = self.query_one("#noteSetting_input").value
-        note_path = note_path.replace("\\", "\\\\")
+
+        if (OS == 'Linux'):
+            base_path = base_path.replace("//", "////")
+            note_path = note_path.replace("//", "////")
+        elif( OS == 'Windows'):
+            base_path = base_path.replace("\\", "\\\\")
+            note_path = note_path.replace("\\", "\\\\")
+        else:
+            self.notify("Unkown OS. Please run this app on Linux or Windows",severity="error")
+            return
 
         read_setting = "1" if self.query_one("#readmeSetting_check").value else "0"
         git_setting = "1" if self.query_one("#gitSetting_check").value else "0"
         mkNote_setting = "1" if self.query_one("#mknoteSetting_check").value else "0"
+        mkLink_setting = "1" if self.query_one("#mklinkSetting_check").value else "0"
         venv_setting = "1" if self.query_one("#venvSetting_check").value else "0"
         cargo_setting = "1" if self.query_one("#cargoSetting_check").value else "0"
 
@@ -149,6 +165,7 @@ class AutoProjDirUI(App):
         settings_content += "\t\"readme_def\":" +f"\"{read_setting}\"" + ",\n"
         settings_content += "\t\"git_def\":" +f"\"{git_setting}\"" + ",\n"
         settings_content += "\t\"mkNote_def\":" +f"\"{mkNote_setting}\"" + ",\n"
+        settings_content += "\t\"link_def\":" +f"\"{mkLink_setting}\"" + ",\n"
         settings_content += "\t\"venv_def\":" +f"\"{venv_setting}\"" + ",\n"
         settings_content += "\t\"cargo_def\":" +f"\"{cargo_setting}\"" + ",\n"
 
@@ -184,10 +201,10 @@ class AutoProjDirUI(App):
                 yield HorizontalGroup(
                     VerticalGroup(
                         Checkbox("Create readme?",id="readme_check"),
-                        Checkbox("Make note?",id="mknote_check")
+                        Checkbox("Make note?",id="mknote_check"),
+                        Checkbox("Link to note?", id="mklink_check"),
                     ),
                     VerticalGroup(
-                        #yield Checkbox("Link to note?", id="mklink_check")
                         Checkbox("Init git?", id="git_check"),
                         Checkbox("Init virtual environment?", id="venv_check"),
                         Checkbox("Init cargo?", id="cargo_check")
@@ -200,6 +217,7 @@ class AutoProjDirUI(App):
                     Button("Close",id="close",classes="main_buttons"),
                     id="buttons1"
                 )
+                yield Container()
 
             with TabPane("Settings", id="settings_tab"):
                 yield Container(
@@ -213,9 +231,9 @@ class AutoProjDirUI(App):
                             VerticalGroup(
                                 Checkbox("readme default",id="readmeSetting_check"),
                                 Checkbox("make note default",id="mknoteSetting_check"),
+                                Checkbox("note link default", id="mklinkSetting_check"),
                             ),
                             VerticalGroup(
-                                #yield Checkbox("note link default", id="mklinkSetting_check")
                                 Checkbox("git default", id="gitSetting_check"),
                                 Checkbox("venv default", id="venvSetting_check"),
                                 Checkbox("cargo default", id="cargoSetting_check"),
@@ -250,8 +268,9 @@ class AutoProjDirUI(App):
         if self.git_def == "1":
             self.query_one("#git_check").value = True
             self.query_one("#gitSetting_check").value = True
-        #if self.linkDef == "1":
-        #    self.query_one("#mkLink_check").value = True
+        if self.link_def == "1":
+            self.query_one("#mklink_check").value = True
+            self.query_one("#mklinkSetting_check").value = True
         if self.venv_def == "1":
             self.query_one("#venv_check").value = True
             self.query_one("#venvSetting_check").value = True
@@ -307,8 +326,9 @@ class AutoProjDirUI(App):
         if self.git_def == "1":
             self.query_one("#git_check").value = True
             self.query_one("#gitSetting_check").value = True
-        #if self.linkDef == "1":
-        #    self.query_one("#mkLink_check").value = True
+        if self.link_def == "1":
+            self.query_one("#mklink_check").value = True
+            self.query_one("#mklinkSetting_check").value = True
         if self.venv_def == "1":
             self.query_one("#venv_check").value = True
             self.query_one("#venvSetting_check").value = True
@@ -333,13 +353,20 @@ class AutoProjDirUI(App):
 
         readme = self.query_one("#readme_check").value
         makenote = self.query_one("#mknote_check").value
+        makelink = self.query_one("#mklink_check").value
         initgit = self.query_one("#git_check").value
         initvenv = self.query_one("#venv_check").value
         initcargo = self.query_one("#cargo_check").value
         actions = False
 
         if (self.proceed) :
-            self.PROJ_PATH = self.base_path + self.proj_name + "\\"
+            if (OS == 'Linux'):
+                self.PROJ_PATH = self.base_path + self.proj_name  + "//" # linux
+            elif( OS == 'Windows'):
+                self.PROJ_PATH = self.base_path + self.proj_name + "\\" # windows
+            else:
+                self.notify("Unkown OS. Please run this app on Linux or Windows",severity="error")
+                return
             try:
                 # make project path
                 os.makedirs(self.PROJ_PATH)
@@ -365,7 +392,15 @@ class AutoProjDirUI(App):
                     except:
                         self.notify("Error creating note",severity="warning")
 
-                # initialize git                
+                # make a link to note
+                if makelink:
+                    try:
+                        self.make_link()
+                        actions = True
+                    except:
+                        self.notify("Error creating link to note",severity="warning")
+
+                # initialize git
                 if initgit:
                     try:
                         self.init_git()
@@ -381,6 +416,7 @@ class AutoProjDirUI(App):
                     except:
                         self.notify("Error initiating venv",severity="warning")
 
+                # initialize cargo
                 if initcargo:
                     try:
                         self.init_cargo()
@@ -402,8 +438,9 @@ class AutoProjDirUI(App):
 
     def make_note(self):
         note_path = self.note_path + self.proj_name + ".md"
+        clean_proj_path = self.PROJ_PATH.replace(' ',"%20")
         f = open(note_path, "a")
-        folder_link = "["+self.proj_name+"](file://"+self.PROJ_PATH+")"
+        folder_link = "["+self.proj_name+"](file://"+clean_proj_path+")"
         note_content=f"links:\n{folder_link}\n\n---" 
         f.write(note_content)
 
@@ -417,14 +454,44 @@ class AutoProjDirUI(App):
         subprocess.call(['python','-m','venv','.venv'],stdout=subprocess.DEVNULL,cwd= self.PROJ_PATH)
 
     def make_link(self):
-        # work in progress. Ideally if the user clicks the 'make link" checkbox they do not necessarily need to press the make note button
-        # the system would be able to automatically find which note you are talking about and link to it
-        # trying to achieve that with fzf, but its not working right now
-        # once we know where the link is, then we can make a desktop file or shortcut as appropriate
+        # somewhat experimental. Need people to report edge cases
+        path = self.note_path
+        files = os.listdir(path)
+        if (OS == 'Linux'):
+            files = [f for f in files if os.path.isfile(path+'//'+f)]
+        if (OS == 'Windows'):
+            files = [f for f in files if os.path.isfile(path+'\\'+f)]
+        search_name = self.proj_name
+        best = get_close_matches(search_name,files,1,0.5)
+        if len(best) > 0:
+            proj_note= best[0]
+            print(proj_note) 
 
-        link_path = self.PROJ_PATH + "note.desktop"
-        res = subprocess.call(['fzf',f'--query={self.proj_name}','--select-1'], cwd=self.note_path)
-        print(res)
+        else:
+            print("no match")
+            self.notify("No matching file")
+
+        if (OS == 'Linux'):
+            # for some reason, the desktop file opens obsidian
+            # but not the file if obsidian is not open, but
+            # will correctly open the note if obsidian is open
+            link_path = self.PROJ_PATH + "note.desktop"
+            l = open(link_path,"a") 
+            l.write('[Desktop Entry]\n')
+            l.write('Type=Application\n')
+            l.write(f'Exec=xdg-open obsidian://open?file={proj_note}')
+            l.close()
+        if (OS == 'Windows'):
+            # on the windows side, need two additional libraries
+            link_filePath= self.PROJ_PATH + "note.lnk"
+            print(link_filePath)
+            try:
+                link_path = f"obsidian://open?file={proj_note}"
+                print(link_path)
+                with winshell.shortcut(link_filePath) as link:
+                    link.path=link_path
+            except:
+                self.notify("failed to make shortcut. Winshell and pypiwin32 python libraries must be installed",severity="warning" )
 
 if __name__ == "__main__":
     app = AutoProjDirUI()
