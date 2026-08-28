@@ -7,12 +7,13 @@
 		["attachments","0"]
 	],
 	"base_path":"C:\\path\\to\\your\\projects\\",
-	"note_path":"C;\\path\\to\\your\\notes\\",
+	"note_path":"C:\\path\\to\\your\\notes\\",
 	"readme_def":"0",
 	"git_def":"0",
 	"mkNote_def":"0",
+	"link_def":"0",
 	"venv_def":"0",
 	"cargo_def":"0",
 	"theme":"textual-dark"
-
+	
 }
